@@ -59,8 +59,11 @@
 //!     connect(srv, cli);
 //! }
 //! ```
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::double_must_use))]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy::type_complexity))]
+
+#![allow(clippy::double_must_use)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::wildcard_imports)]
+#![allow(clippy::needless_lifetimes)]
 extern crate crossbeam_channel;
 
 use std::marker::PhantomData;
@@ -83,14 +86,17 @@ pub struct Chan<E, P>(Sender<*mut u8>, Receiver<*mut u8>, PhantomData<(E, P)>);
 unsafe impl<E: marker::Send, P: marker::Send> marker::Send for Chan<E, P> {}
 
 unsafe fn write_chan<A: marker::Send + 'static, E, P>(Chan(tx, _, _): &Chan<E, P>, x: A) {
-    tx.send(Box::into_raw(Box::new(x)) as *mut _).unwrap()
+    #[allow(clippy::ptr_as_ptr)]
+    tx.send(Box::into_raw(Box::new(x)) as *mut _).unwrap();
 }
 
 unsafe fn read_chan<A: marker::Send + 'static, E, P>(Chan(_, rx, _): &Chan<E, P>) -> A {
+    #[allow(clippy::ptr_as_ptr)]
     *Box::from_raw(rx.recv().unwrap() as *mut A)
 }
 
 unsafe fn try_read_chan<A: marker::Send + 'static, E, P>(Chan(_, rx, _): &Chan<E, P>) -> Option<A> {
+    #[allow(clippy::ptr_as_ptr)]
     match rx.try_recv() {
         Ok(a) => Some(*Box::from_raw(a as *mut A)),
         Err(_) => None,
@@ -127,7 +133,7 @@ pub struct Rec<P>(PhantomData<P>);
 /// out of.
 pub struct Var<N>(PhantomData<N>);
 
-/// The HasDual trait defines the dual relationship between protocols.
+/// The `HasDual` trait defines the dual relationship between protocols.
 ///
 /// Any valid protocol has a corresponding dual.
 ///
@@ -187,7 +193,9 @@ impl<E> Chan<E, Eps> {
 
         let this = mem::ManuallyDrop::new(self);
 
+        #[allow(clippy::ref_as_ptr)]
         let sender = unsafe { ptr::read(&(this).0 as *const _) };
+        #[allow(clippy::ref_as_ptr)]
         let receiver = unsafe { ptr::read(&(this).1 as *const _) };
 
         drop(sender);
@@ -198,6 +206,7 @@ impl<E> Chan<E, Eps> {
 impl<E, P> Chan<E, P> {
     unsafe fn cast<E2, P2>(self) -> Chan<E2, P2> {
         let this = mem::ManuallyDrop::new(self);
+        #[allow(clippy::ref_as_ptr)]
         Chan(
             ptr::read(&(this).0 as *const _),
             ptr::read(&(this).1 as *const _),
@@ -230,6 +239,8 @@ impl<E, P, A: marker::Send + 'static> Chan<E, Recv<A, P>> {
     }
 
     /// Non-blocking receive.
+    /// # Errors
+    /// if there is nothing to receive on the channel
     #[must_use]
     pub fn try_recv(self) -> Result<(Chan<E, P>, A), Self> {
         unsafe {
@@ -338,6 +349,8 @@ impl<E, P, Q> Chan<E, Offer<P, Q>> {
     }
 
     /// Poll for choice.
+    /// # Errors
+    /// the choice is not of which offer the dual took is not on the channel
     #[must_use]
     pub fn try_offer(self) -> Result<Branch<Chan<E, P>, Chan<E, Q>>, Self> {
         unsafe {
@@ -392,8 +405,9 @@ pub fn hselect<E, P, A>(
     (c, chans)
 }
 
-/// An alternative version of homogeneous select, returning the index of the Chan
+/// An alternative version of homogeneous select, returning the index of the `Chan`
 /// that is ready to receive.
+#[allow(clippy::missing_panics_doc, clippy::must_use_candidate)]
 pub fn iselect<E, P, A>(chans: &[Chan<E, Recv<A, P>>]) -> usize {
     let mut map = HashMap::new();
 
@@ -410,14 +424,14 @@ pub fn iselect<E, P, A>(chans: &[Chan<E, Recv<A, P>>]) -> usize {
 
         sel.ready()
     };
-    map.remove(&id).unwrap()
+    map.remove(&id).expect("{id} is in map by construction")
 }
 
 /// Heterogeneous selection structure for channels
 ///
 /// This builds a structure of channels that we wish to select over. This is
 /// structured in a way such that the channels selected over cannot be
-/// interacted with (consumed) as long as the borrowing ChanSelect object
+/// interacted with (consumed) as long as the borrowing `ChanSelect` object
 /// exists. This is necessary to ensure memory safety.
 ///
 /// The type parameter T is a return type, ie we store a value of some type T
@@ -427,6 +441,7 @@ pub struct ChanSelect<'c> {
 }
 
 impl<'c> ChanSelect<'c> {
+    #[must_use]
     pub fn new() -> ChanSelect<'c> {
         ChanSelect {
             receivers: Vec::new(),
@@ -447,13 +462,14 @@ impl<'c> ChanSelect<'c> {
         self.receivers.push(rx);
     }
 
-    /// Find a Receiver (and hence a Chan) that is ready to receive.
+    /// Find a `Receiver` (and hence a `Chan`) that is ready to receive.
     ///
-    /// This method consumes the ChanSelect, freeing up the borrowed Receivers
+    /// This method consumes the `ChanSelect`, freeing up the borrowed Receivers
     /// to be consumed.
+    #[allow(clippy::must_use_candidate)]
     pub fn wait(self) -> usize {
         let mut sel = Select::new();
-        for rx in self.receivers.into_iter() {
+        for rx in self.receivers {
             sel.recv(rx);
         }
 
@@ -461,10 +477,12 @@ impl<'c> ChanSelect<'c> {
     }
 
     /// How many channels are there in the structure?
+    #[allow(clippy::must_use_candidate)]
     pub fn len(&self) -> usize {
         self.receivers.len()
     }
 
+    #[allow(clippy::must_use_candidate)]
     pub fn is_empty(&self) -> bool {
         self.receivers.is_empty()
     }
@@ -489,6 +507,8 @@ pub fn session_channel<P: HasDual>() -> (Chan<(), P>, Chan<(), P::Dual>) {
 }
 
 /// Connect two functions using a session typed channel.
+/// # Panics
+/// if `srv` causes a panic
 pub fn connect<F1, F2, P>(srv: F1, cli: F2)
 where
     F1: Fn(Chan<(), P>) + marker::Send + 'static,

@@ -3,6 +3,7 @@
 /// This example demonstrates how we can use traits to send values through a
 /// channel without actually knowing the type of the value.
 extern crate session_types;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 use std::thread::spawn;
@@ -13,7 +14,7 @@ fn srv<A: std::marker::Send + 'static>(x: A, c: Chan<(), Send<A, Eps>>) {
 
 fn cli<A: std::marker::Send + std::fmt::Debug + 'static>(c: Chan<(), Recv<A, Eps>>) {
     let (c, x) = c.recv();
-    println!("{:?}", x);
+    println!("{x:?}");
     c.close();
 }
 

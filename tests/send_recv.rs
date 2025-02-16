@@ -4,7 +4,7 @@ use session_types::*;
 use std::thread::spawn;
 
 fn client(n: u64, c: Chan<(), Send<u64, Eps>>) {
-    c.send(n).close()
+    c.send(n).close();
 }
 
 #[test]

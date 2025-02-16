@@ -1,8 +1,9 @@
-#![cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
+#![allow(clippy::type_complexity)]
 // This is an implementation of the extended arithmetic server from
 // Vasconcelos-Gay-Ravara (2006) with some additional functionality
 
 extern crate session_types;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 use std::thread::spawn;
@@ -64,15 +65,15 @@ type AddCli<R> = Choose<Eps, Choose<Send<i64, Send<i64, Recv<i64, Var<Z>>>>, R>>
 
 fn add_client<R>(c: Chan<(), Rec<AddCli<R>>>) {
     let (c, n) = c.enter().sel2().sel1().send(42).send(1).recv();
-    println!("{}", n);
-    c.zero().sel1().close()
+    println!("{n}");
+    c.zero().sel1().close();
 }
 
 type NegCli<R, S> = Choose<Eps, Choose<R, Choose<Send<i64, Recv<i64, Var<Z>>>, S>>>;
 
 fn neg_client<R, S>(c: Chan<(), Rec<NegCli<R, S>>>) {
     let (c, n) = c.enter().skip2().sel1().send(42).recv();
-    println!("{}", n);
+    println!("{n}");
     c.zero().sel1().close();
 }
 
@@ -83,7 +84,7 @@ fn sqrt_client<R, S, T>(c: Chan<(), Rec<SqrtCli<R, S, T>>>) {
     match c.enter().skip3().sel1().send(42.0).offer() {
         Left(c) => {
             let (c, n) = c.recv();
-            println!("{}", n);
+            println!("{n}");
             c.zero().sel1().close();
         }
         Right(c) => {
@@ -106,7 +107,7 @@ fn fn_client<R, S, T>(c: Chan<(), Rec<PrimeCli<R, S, T>>>) {
     }
 
     let (c, b) = c.enter().skip4().send(even).send(42).recv();
-    println!("{}", b);
+    println!("{b}");
     c.zero().sel1().close();
 }
 
@@ -132,7 +133,7 @@ fn get_neg<R: std::marker::Send + 'static, S: std::marker::Send + 'static>(
 ) {
     let (c1, c2) = c1.recv();
     let (c2, n) = c2.recv();
-    println!("{}", n);
+    println!("{n}");
     c2.zero().sel1().close();
     c1.close();
 }

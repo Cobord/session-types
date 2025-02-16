@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(many_single_char_names, ptr_arg))]
+#![allow(clippy::many_single_char_names, clippy::ptr_arg, clippy::similar_names)]
 // This is an implementation of the Sutherland-Hodgman (1974) reentrant polygon
 // clipping algorithm. It takes a polygon represented as a number of vertices
 // and cuts it according to the given planes.
@@ -9,6 +9,7 @@
 extern crate rand;
 extern crate session_types;
 
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 use rand::distributions::{Distribution, Standard};

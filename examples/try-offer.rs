@@ -4,6 +4,7 @@
 //! and the "client" generates a some characters at different intervals.
 
 extern crate session_types;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 type Term = Eps;

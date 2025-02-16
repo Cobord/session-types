@@ -1,5 +1,7 @@
+#![allow(clippy::similar_names)]
 extern crate session_types;
 
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 fn main() {
@@ -13,14 +15,14 @@ fn main() {
     let (ready, mut rest) = hselect(receivers);
 
     let (to_close, s) = ready.recv();
-    println!("Got a response: \"{}\"", s);
+    println!("Got a response: \"{s}\"");
     to_close.close();
 
     tcu.send("Hello, World from TCU!".to_string()).close();
 
     rest.drain(..).for_each(|r| {
         let (to_close, s) = r.recv();
-        println!("Also got this: \"{}\"", s);
-        to_close.close()
+        println!("Also got this: \"{s}\"");
+        to_close.close();
     });
 }

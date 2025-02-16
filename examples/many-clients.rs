@@ -1,8 +1,9 @@
-#![cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#![allow(clippy::needless_pass_by_value)]
 extern crate rand;
 extern crate session_types;
 
 use rand::random;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 use std::thread::spawn;
 
@@ -51,11 +52,11 @@ fn client_handler(c: Chan<(), Client>) {
         Left(c) => {
             let (c, n2) = c.recv();
             c.close();
-            println!("{} + 42 = {}", n, n2);
+            println!("{n} + 42 = {n2}");
         }
         Right(c) => {
             c.close();
-            println!("{} + 42 is an overflow :(", n);
+            println!("{n} + 42 is an overflow :(");
         }
     }
 }
@@ -66,7 +67,7 @@ fn main() {
     let n: u8 = random();
     let mut tx = tx.enter();
 
-    println!("Spawning {} clients", n);
+    println!("Spawning {n} clients");
     let mut ts = vec![];
     for _ in 0..n {
         let (c1, c2) = session_channel();
@@ -80,5 +81,5 @@ fn main() {
     for t in ts {
         let _ = t.join();
     }
-    println!("Handled {} connections", count);
+    println!("Handled {count} connections");
 }

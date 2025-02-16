@@ -1,7 +1,7 @@
 /// This is an implementation of an echo server.
-
 /// One process reads input and sends it to the other process, which outputs it.
 extern crate session_types;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 
 use std::thread::spawn;
@@ -19,7 +19,7 @@ fn srv(c: Chan<(), Rec<Srv>>) {
             },
             RECV => {
                 let (c, s) = c.recv();
-                println!("Received: {}", s);
+                println!("Received: {s}");
                 c.zero()
             }
         };
@@ -38,9 +38,10 @@ fn cli(c: Chan<(), Rec<Cli>>) {
         if !buf.is_empty() {
             buf.pop();
         }
+        #[allow(clippy::single_match_else)]
         match &buf[..] {
             "q" => {
-                let c = c.sel2().send(format!("{} lines sent", count));
+                let c = c.sel2().send(format!("{count} lines sent"));
                 c.zero().sel1().close();
                 println!("Client quitting");
                 break;

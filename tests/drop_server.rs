@@ -21,18 +21,21 @@ fn server_client_works() {
 }
 
 #[test]
+#[allow(clippy::should_panic_without_expect)]
 #[should_panic]
 fn client_incomplete_panics() {
     connect(server, drop_client);
 }
 
 #[test]
+#[allow(clippy::should_panic_without_expect)]
 #[should_panic]
 fn server_incomplete_panics() {
     connect(drop_server, client);
 }
 
 #[test]
+#[allow(clippy::should_panic_without_expect)]
 #[should_panic]
 fn server_client_incomplete_panics() {
     connect(drop_server, drop_client);

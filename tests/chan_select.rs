@@ -1,3 +1,4 @@
+#![allow(clippy::similar_names)]
 extern crate session_types;
 
 use session_types::*;
@@ -33,7 +34,7 @@ fn chan_select_hselect() {
     rest.drain(..).for_each(|r| {
         let (to_close, received) = r.recv();
         assert_eq!(received, 2u64);
-        to_close.close()
+        to_close.close();
     });
 }
 

@@ -1,5 +1,6 @@
-#![cfg_attr(feature = "cargo-clippy", allow(ptr_arg))]
+#![allow(clippy::ptr_arg)]
 extern crate session_types;
+#[allow(clippy::wildcard_imports)]
 use session_types::*;
 use std::thread::spawn;
 
@@ -63,7 +64,7 @@ fn deposit_client(c: Chan<(), Client>) {
     };
 
     let (c, new_balance) = c.sel1().send(200).recv();
-    println!("deposit_client: new balance: {}", new_balance);
+    println!("deposit_client: new balance: {new_balance}");
     c.zero().skip3().close();
 }
 
